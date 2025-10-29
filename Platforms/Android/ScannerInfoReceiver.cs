@@ -2,6 +2,7 @@
 using Android.Content;
 using Microsoft.Maui.ApplicationModel;
 using Android.OS;
+using Application = Android.App.Application;
 
 namespace USB_EMDK.Platforms.Android
 {
@@ -37,7 +38,7 @@ namespace USB_EMDK.Platforms.Android
     {
         public static void RequestScannerSerial()
         {
-            var context = Platform.AppContext ?? Android.App.Application.Context;
+            var context = Platform.AppContext ?? Application.Context;
 
             Intent dwIntent = new Intent();
             dwIntent.SetAction("com.symbol.datawedge.api.ACTION");
