@@ -6,6 +6,7 @@ using Application = Android.App.Application;
 
 namespace USB_EMDK.Platforms.Android
 {
+    /*
     [BroadcastReceiver(Enabled = true)]
     [IntentFilter(new[] {
         "com.symbol.datawedge.api.RESULT_ENUMERATE_SCANNERS",
@@ -66,6 +67,80 @@ namespace USB_EMDK.Platforms.Android
             dwIntent.SetAction("com.symbol.datawedge.api.ACTION");
             dwIntent.PutExtra("com.symbol.datawedge.api.ENUMERATE_SCANNERS", "");
             context.SendBroadcast(dwIntent);
+        }
+    }
+
+    */
+
+
+    public class ScannerInfoReceiver : BroadcastReceiver
+    {
+        public static event Action<string>? OnSerialReceived;
+
+        public override void OnReceive(Context context, Intent intent)
+        {
+            System.Diagnostics.Debug.WriteLine($"Receiver got action: {intent.Action}");
+
+            if (intent.Action == "com.symbol.datawedge.api.RESULT_GET_DEVICE_SERIAL_NUMBER")
+            {
+                string serial = intent.GetStringExtra("com.symbol.datawedge.api.RESULT_GET_DEVICE_SERIAL_NUMBER");
+                System.Diagnostics.Debug.WriteLine($"Serial received: {serial}");
+
+                if (!string.IsNullOrEmpty(serial))
+                {
+                    OnSerialReceived?.Invoke(serial);
+                }
+            }
+        }
+    }
+
+    public static class ZebraScannerHelper
+    {
+        private static ScannerInfoReceiver? _receiver;
+
+        public static void RegisterReceiver()
+        {
+            var context = Platform.AppContext ?? Application.Context;
+
+            if (_receiver == null)
+            {
+                _receiver = new ScannerInfoReceiver();
+                IntentFilter filter = new IntentFilter();
+                filter.AddAction("com.symbol.datawedge.api.RESULT_GET_DEVICE_SERIAL_NUMBER");
+                filter.AddAction("com.symbol.datawedge.api.RESULT_ENUMERATE_SCANNERS");
+
+                context.RegisterReceiver(_receiver, filter);
+                System.Diagnostics.Debug.WriteLine("Receiver registered");
+            }
+        }
+
+        public static void UnregisterReceiver()
+        {
+            var context = Platform.AppContext ?? Application.Context;
+
+            if (_receiver != null)
+            {
+                context.UnregisterReceiver(_receiver);
+                _receiver = null;
+            }
+        }
+
+        public static void RequestScannerSerial()
+        {
+            var context = Platform.AppContext ?? Application.Context;
+
+            Intent dwIntent = new Intent();
+            dwIntent.SetAction("com.symbol.datawedge.api.ACTION");
+            dwIntent.PutExtra("com.symbol.datawedge.api.GET_DEVICE_SERIAL_NUMBER", "");
+
+            // Create result bundle to specify app package
+            Bundle resultBundle = new Bundle();
+            resultBundle.PutString("RECEIVER_PACKAGE", context.PackageName);
+            resultBundle.PutString("RECEIVER_ACTION", "com.symbol.datawedge.api.RESULT_GET_DEVICE_SERIAL_NUMBER");
+            dwIntent.PutExtra("SEND_RESULT", resultBundle);
+
+            context.SendBroadcast(dwIntent);
+            System.Diagnostics.Debug.WriteLine("Request sent");
         }
     }
 }
