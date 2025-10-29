@@ -14,12 +14,11 @@ namespace USB_EMDK
         {
             InitializeComponent();
 #if ANDROID
-            _emdkHelper = new ZebraEmdkHelper();
-            _emdkHelper.DeviceInfoReady += (info) =>
+            ScannerInfoReceiver.OnSerialReceived += serial =>
             {
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    LblInfo.Text = info;
+                    DisplayAlert("Scanner Serial", serial, "OK");
                 });
             };
 #endif
@@ -28,7 +27,7 @@ namespace USB_EMDK
         private void OnFetchClicked(object sender, EventArgs e)
         {
 #if ANDROID
-            _emdkHelper.Init(Android.App.Application.Context);
+            ZebraScannerHelper.RequestScannerSerial();
 #endif
         }
     }
